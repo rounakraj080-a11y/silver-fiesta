@@ -46,6 +46,16 @@ export default function ChannelSidebar({
   const [showCreate, setShowCreate] = useState(false);
   const [channelName, setChannelName] = useState("");
   const [channelType, setChannelType] = useState("text");
+  const [showInvite, setShowInvite] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  function copyInviteCode() {
+    if (!server?.invite_code) return;
+    navigator.clipboard?.writeText(server.invite_code).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
 
   const textChannels = channels.filter((c) => c.type === "text");
   const voiceChannels = channels.filter((c) => c.type === "voice");
@@ -61,7 +71,16 @@ export default function ChannelSidebar({
   return (
     <div className="w-[240px] shrink-0 h-full bg-discord-dark flex flex-col">
       <div className="h-12 shrink-0 flex items-center px-4 border-b border-discord-darkest shadow-sm">
-        <h1 className="text-white font-semibold truncate">{server?.name || "Select a server"}</h1>
+        <h1 className="text-white font-semibold truncate flex-1">{server?.name || "Select a server"}</h1>
+        {server && (
+          <button
+            onClick={() => setShowInvite(true)}
+            title="Invite people"
+            className="text-discord-muted hover:text-white text-sm shrink-0"
+          >
+            👤+
+          </button>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto px-2 py-3">
@@ -191,6 +210,39 @@ export default function ChannelSidebar({
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {showInvite && server && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-discord-dark rounded-lg p-6 w-full max-w-sm shadow-xl">
+            <h2 className="text-white text-lg font-bold mb-1">Invite people to {server.name}</h2>
+            <p className="text-discord-muted text-sm mb-4">
+              Share this code — anyone can use it to join via the <span className="text-discord-text">+</span> button
+              → "Join by code" on the server list.
+            </p>
+
+            <div className="flex items-center gap-2 mb-4">
+              <div className="flex-1 bg-discord-darkest text-discord-text font-mono text-lg tracking-widest text-center rounded px-3 py-2.5 select-all">
+                {server.invite_code}
+              </div>
+              <button
+                onClick={copyInviteCode}
+                className="bg-discord-blurple hover:bg-indigo-600 text-white px-3 py-2.5 rounded text-sm font-medium shrink-0"
+              >
+                {copied ? "Copied!" : "Copy"}
+              </button>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowInvite(false)}
+                className="text-discord-muted hover:text-white px-3 py-2 text-sm"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
