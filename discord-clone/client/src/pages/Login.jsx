@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 
@@ -10,12 +10,18 @@ export default function Login() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    const lastEmail = localStorage.getItem("lastEmail");
+    if (lastEmail) setEmail(lastEmail);
+  }, []);
+
   async function onSubmit(e) {
     e.preventDefault();
     setError("");
     setBusy(true);
     try {
       await login(email, password);
+      localStorage.setItem("lastEmail", email);
       navigate("/channels");
     } catch (err) {
       setError(err?.response?.data?.error || "Failed to log in");
@@ -54,8 +60,13 @@ export default function Login() {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full mb-6 rounded bg-discord-darkest text-discord-text px-3 py-2.5 outline-none border border-transparent focus:border-discord-blurple"
+          className="w-full mb-2 rounded bg-discord-darkest text-discord-text px-3 py-2.5 outline-none border border-transparent focus:border-discord-blurple"
         />
+        <div className="text-right mb-6">
+          <Link to="/forgot-password" className="text-discord-blurple hover:underline text-sm">
+            Forgot your password?
+          </Link>
+        </div>
 
         <button
           type="submit"
