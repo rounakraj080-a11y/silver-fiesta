@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-export default function ServerSidebar({ servers, activeServerId, onSelectServer, onCreateServer, onJoinServer }) {
+export default function ServerSidebar({ servers, activeServerId, onSelectServer, onCreateServer, onJoinServer, mobileVisible }) {
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState("");
   const [joinCode, setJoinCode] = useState("");
@@ -31,7 +31,9 @@ export default function ServerSidebar({ servers, activeServerId, onSelectServer,
   }
 
   return (
-    <div className="w-[72px] shrink-0 h-full bg-discord-darkest flex flex-col items-center py-3 gap-2 overflow-y-auto">
+    <div
+      className={`${mobileVisible ? "flex" : "hidden"} md:flex w-full md:w-[72px] shrink-0 h-full bg-discord-darkest flex-col items-center py-3 gap-2 overflow-y-auto`}
+    >
       {servers.map((s) => {
         const active = s.id === activeServerId;
         return (
@@ -39,20 +41,25 @@ export default function ServerSidebar({ servers, activeServerId, onSelectServer,
             key={s.id}
             onClick={() => onSelectServer(s.id)}
             title={s.name}
-            className={`relative w-12 h-12 flex items-center justify-center text-white font-semibold
-              transition-all duration-150
-              ${active ? "rounded-2xl bg-discord-blurple" : "rounded-3xl bg-discord-mid hover:rounded-2xl hover:bg-discord-blurple"}`}
+            className="w-full md:w-12 flex md:block items-center gap-3 md:gap-0 px-4 md:px-0 py-2 md:py-0 rounded md:rounded-none hover:bg-discord-light/40 md:hover:bg-transparent"
           >
             <span
-              className={`absolute left-[-16px] bg-white rounded-r-full transition-all duration-150
-                ${active ? "h-10 w-1.5" : "h-2 w-1.5 opacity-0 group-hover:opacity-100"}`}
-            />
-            {s.icon_text}
+              className={`relative w-12 h-12 shrink-0 flex items-center justify-center text-white font-semibold
+                transition-all duration-150
+                ${active ? "rounded-2xl bg-discord-blurple" : "rounded-3xl bg-discord-mid md:hover:rounded-2xl md:hover:bg-discord-blurple"}`}
+            >
+              <span
+                className={`hidden md:block absolute left-[-16px] bg-white rounded-r-full transition-all duration-150
+                  ${active ? "h-10 w-1.5" : "h-2 w-1.5 opacity-0 group-hover:opacity-100"}`}
+              />
+              {s.icon_text}
+            </span>
+            <span className="md:hidden text-white text-sm font-medium truncate">{s.name}</span>
           </button>
         );
       })}
 
-      <div className="w-8 border-t border-discord-lighter my-1" />
+      <div className="w-full md:w-8 border-t border-discord-lighter my-1" />
 
       <button
         onClick={() => {
@@ -61,9 +68,12 @@ export default function ServerSidebar({ servers, activeServerId, onSelectServer,
           setError("");
         }}
         title="Add a Server"
-        className="w-12 h-12 rounded-3xl bg-discord-mid hover:rounded-2xl hover:bg-discord-green text-discord-green hover:text-white flex items-center justify-center text-2xl font-bold transition-all duration-150"
+        className="w-full md:w-12 flex md:block items-center gap-3 md:gap-0 px-4 md:px-0 py-2 md:py-0"
       >
-        +
+        <span className="w-12 h-12 shrink-0 rounded-3xl bg-discord-mid md:hover:rounded-2xl md:hover:bg-discord-green text-discord-green md:hover:text-white flex items-center justify-center text-2xl font-bold transition-all duration-150">
+          +
+        </span>
+        <span className="md:hidden text-discord-green text-sm font-medium">Add a Server</span>
       </button>
 
       {showCreate && (
