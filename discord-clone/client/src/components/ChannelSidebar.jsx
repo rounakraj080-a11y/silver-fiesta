@@ -42,6 +42,8 @@ export default function ChannelSidebar({
   muted,
   onToggleMute,
   onLogout,
+  mobileVisible,
+  onBack,
 }) {
   const [showCreate, setShowCreate] = useState(false);
   const [channelName, setChannelName] = useState("");
@@ -69,8 +71,11 @@ export default function ChannelSidebar({
   }
 
   return (
-    <div className="w-[240px] shrink-0 h-full bg-discord-dark flex flex-col">
+    <div className={`${mobileVisible ? "flex" : "hidden"} md:flex w-full md:w-[240px] shrink-0 h-full bg-discord-dark flex-col`}>
       <div className="h-12 shrink-0 flex items-center px-4 border-b border-discord-darkest shadow-sm">
+        <button onClick={onBack} className="md:hidden mr-2 text-discord-muted hover:text-white text-lg" title="Back to servers">
+          ‹
+        </button>
         <h1 className="text-white font-semibold truncate flex-1">{server?.name || "Select a server"}</h1>
         {server && (
           <button
