@@ -27,6 +27,9 @@ export default function ChatApp() {
   const [muted, setMuted] = useState(false);
   const [connected, setConnected] = useState(false);
 
+  // Mobile only: which single "screen" is showing (desktop shows all at once).
+  const [mobileView, setMobileView] = useState("servers"); // "servers" | "channels" | "chat"
+
   const socketRef = useRef(null);
   const activeChannelRef = useRef(null);
   activeChannelRef.current = activeChannel;
@@ -108,7 +111,10 @@ export default function ChatApp() {
     }
   }, [activeChannel?.id]);
 
-  const handleSelectServer = useCallback((id) => setActiveServerId(id), []);
+  const handleSelectServer = useCallback((id) => {
+    setActiveServerId(id);
+    setMobileView("channels");
+  }, []);
 
   const handleSelectChannel = useCallback(
     (channel) => {
@@ -126,6 +132,7 @@ export default function ChatApp() {
       } else {
         setActiveChannel(channel);
       }
+      setMobileView("chat");
     },
     [currentVoiceChannelId]
   );
@@ -171,6 +178,7 @@ export default function ChatApp() {
         onSelectServer={handleSelectServer}
         onCreateServer={handleCreateServer}
         onJoinServer={handleJoinServer}
+        mobileVisible={mobileView === "servers"}
       />
 
       <ChannelSidebar
@@ -185,6 +193,8 @@ export default function ChatApp() {
         muted={muted}
         onToggleMute={() => setMuted((m) => !m)}
         onLogout={logout}
+        mobileVisible={mobileView === "channels"}
+        onBack={() => setMobileView("servers")}
       />
 
       <ChatView
@@ -194,9 +204,17 @@ export default function ChatApp() {
         membersPanelOpen={membersPanelOpen}
         onToggleMembersPanel={() => setMembersPanelOpen((o) => !o)}
         connected={connected}
+        mobileVisible={mobileView === "chat"}
+        onBack={() => setMobileView("channels")}
       />
 
-      {membersPanelOpen && <MembersPanel members={members} onlineUserIds={onlineUserIds} />}
+      {membersPanelOpen && (
+        <MembersPanel
+          members={members}
+          onlineUserIds={onlineUserIds}
+          onClose={() => setMembersPanelOpen(false)}
+        />
+      )}
     </div>
   );
 }
