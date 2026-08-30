@@ -21,12 +21,19 @@ function MemberRow({ member, online }) {
   );
 }
 
-export default function MembersPanel({ members, onlineUserIds }) {
+export default function MembersPanel({ members, onlineUserIds, onClose }) {
   const online = members.filter((m) => onlineUserIds.includes(m.id));
   const offline = members.filter((m) => !onlineUserIds.includes(m.id));
 
   return (
-    <div className="w-[240px] shrink-0 h-full bg-discord-dark overflow-y-auto px-2 py-4">
+    <div className="fixed inset-0 z-40 md:static md:inset-auto md:z-auto w-full md:w-[240px] shrink-0 h-full bg-discord-dark overflow-y-auto px-2 py-4">
+      <div className="flex items-center justify-between px-2 mb-3 md:hidden">
+        <span className="text-white font-semibold">Members</span>
+        <button onClick={onClose} className="text-discord-muted hover:text-white text-xl leading-none">
+          ×
+        </button>
+      </div>
+
       {online.length > 0 && (
         <>
           <div className="text-xs font-bold text-discord-muted uppercase px-2 mb-1">
