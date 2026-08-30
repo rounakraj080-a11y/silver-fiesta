@@ -40,7 +40,7 @@ function Message({ message, showHeader }) {
   );
 }
 
-export default function ChatView({ channel, messages, onSendMessage, membersPanelOpen, onToggleMembersPanel, connected }) {
+export default function ChatView({ channel, messages, onSendMessage, membersPanelOpen, onToggleMembersPanel, connected, mobileVisible, onBack }) {
   const [draft, setDraft] = useState("");
   const logRef = useRef(null);
 
@@ -60,8 +60,11 @@ export default function ChatView({ channel, messages, onSendMessage, membersPane
   const isVoiceChannel = channel?.type === "voice";
 
   return (
-    <div className="flex-1 h-full flex flex-col min-w-0 bg-discord-mid">
+    <div className={`${mobileVisible ? "flex" : "hidden"} md:flex flex-1 h-full flex-col min-w-0 bg-discord-mid`}>
       <div className="h-12 shrink-0 flex items-center px-4 border-b border-discord-darkest shadow-sm gap-2">
+        <button onClick={onBack} className="md:hidden text-discord-muted hover:text-white text-lg" title="Back to channels">
+          ‹
+        </button>
         <span className="text-discord-muted text-lg">{isVoiceChannel ? "🔊" : "#"}</span>
         <span className="text-white font-semibold truncate">{channel?.name || "no-channel"}</span>
         {!connected && (
