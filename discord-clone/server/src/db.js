@@ -118,4 +118,20 @@ function seedIfEmpty() {
 
 seedIfEmpty();
 
+// ---------------------------------------------------------------------
+// Lightweight migration — adds password-reset columns to existing
+// databases that were created before this feature existed. Safe to run
+// every boot: it only alters the table if the column is missing.
+// ---------------------------------------------------------------------
+function migrate() {
+  const userColumns = db.prepare("PRAGMA table_info(users)").all().map((c) => c.name);
+  if (!userColumns.includes("reset_code")) {
+    db.exec("ALTER TABLE users ADD COLUMN reset_code TEXT");
+  }
+  if (!userColumns.includes("reset_code_expires")) {
+    db.exec("ALTER TABLE users ADD COLUMN reset_code_expires TEXT");
+  }
+}
+migrate();
+
 module.exports = { db, id };
