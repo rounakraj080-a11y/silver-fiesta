@@ -17,6 +17,7 @@ export default function Register() {
     setBusy(true);
     try {
       await register(username, email, password);
+      localStorage.setItem("lastEmail", email);
       navigate("/channels");
     } catch (err) {
       setError(err?.response?.data?.error || "Failed to register");
