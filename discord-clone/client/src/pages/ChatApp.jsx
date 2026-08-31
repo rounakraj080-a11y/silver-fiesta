@@ -137,11 +137,11 @@ export default function ChatApp() {
     [currentVoiceChannelId]
   );
 
-  const handleSendMessage = useCallback((content) => {
+   const handleSendMessage = useCallback((content, attachment) => {
     const socket = socketRef.current;
     const channel = activeChannelRef.current;
     if (!socket || !channel) return;
-    socket.emit("send_message", { channelId: channel.id, content }, (res) => {
+    socket.emit("send_message", { channelId: channel.id, content, attachment }, (res) => {
       if (res?.error) console.error(res.error);
     });
   }, []);
