@@ -39,7 +39,7 @@ function Attachment({ attachment }) {
   }
 
   return (
-    
+ <a   
       href={attachment.url}
       target="_blank"
       rel="noreferrer"
