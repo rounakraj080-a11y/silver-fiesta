@@ -7,6 +7,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 
 require("./db"); // initializes + seeds the database as a side effect
+const { resolvedUploadsDir } = require("./middleware/upload");
 
 const authRoutes = require("./routes/auth");
 const serverRoutes = require("./routes/servers");
@@ -28,6 +29,10 @@ app.use(express.json());
 
 app.get("/api/health", (req, res) => res.json({ ok: true }));
 
+// Uploaded message attachments (images/files) — served from the same
+// persistent volume the database lives on.
+app.use("/uploads", express.static(resolvedUploadsDir));
+
 app.use("/api/auth", authRoutes);
 app.use("/api/servers", serverRoutes);
 app.use("/api/channels", channelRoutes);
@@ -35,8 +40,6 @@ app.use("/api/messages", messageRoutes);
 
 registerSocketHandlers(io);
 
-// In production, this single Node process also serves the built React
-// client, so the whole app is one deployable service with one URL.
 const clientDist = path.join(__dirname, "..", "..", "client", "dist");
 if (fs.existsSync(clientDist)) {
   app.use(express.static(clientDist));
