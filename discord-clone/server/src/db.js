@@ -6,7 +6,6 @@ const crypto = require("crypto");
 const DB_FILE = process.env.DATABASE_FILE || "./data/discord_clone.db";
 const resolvedPath = path.isAbsolute(DB_FILE) ? DB_FILE : path.join(process.cwd(), DB_FILE);
 
-// Make sure the folder that will hold the database file exists.
 fs.mkdirSync(path.dirname(resolvedPath), { recursive: true });
 
 const db = new Database(resolvedPath);
@@ -17,10 +16,6 @@ function id() {
   return crypto.randomUUID();
 }
 
-// ---------------------------------------------------------------------
-// Schema — created automatically on first boot. No manual migration
-// step required.
-// ---------------------------------------------------------------------
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
@@ -68,11 +63,6 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_channels_server ON channels(server_id, position);
 `);
 
-// ---------------------------------------------------------------------
-// Seed — a default global server + #general/#gaming text channels and a
-// voice channel, so the app is immediately usable after first launch.
-// This only runs once (guarded by checking if any server exists).
-// ---------------------------------------------------------------------
 function seedIfEmpty() {
   const serverCount = db.prepare("SELECT COUNT(*) AS c FROM servers").get().c;
   if (serverCount > 0) return;
@@ -118,11 +108,6 @@ function seedIfEmpty() {
 
 seedIfEmpty();
 
-// ---------------------------------------------------------------------
-// Lightweight migration — adds password-reset columns to existing
-// databases that were created before this feature existed. Safe to run
-// every boot: it only alters the table if the column is missing.
-// ---------------------------------------------------------------------
 function migrate() {
   const userColumns = db.prepare("PRAGMA table_info(users)").all().map((c) => c.name);
   if (!userColumns.includes("reset_code")) {
@@ -130,6 +115,20 @@ function migrate() {
   }
   if (!userColumns.includes("reset_code_expires")) {
     db.exec("ALTER TABLE users ADD COLUMN reset_code_expires TEXT");
+  }
+
+  const messageColumns = db.prepare("PRAGMA table_info(messages)").all().map((c) => c.name);
+  if (!messageColumns.includes("attachment_url")) {
+    db.exec("ALTER TABLE messages ADD COLUMN attachment_url TEXT");
+  }
+  if (!messageColumns.includes("attachment_name")) {
+    db.exec("ALTER TABLE messages ADD COLUMN attachment_name TEXT");
+  }
+  if (!messageColumns.includes("attachment_type")) {
+    db.exec("ALTER TABLE messages ADD COLUMN attachment_type TEXT");
+  }
+  if (!messageColumns.includes("attachment_size")) {
+    db.exec("ALTER TABLE messages ADD COLUMN attachment_size INTEGER");
   }
 }
 migrate();
