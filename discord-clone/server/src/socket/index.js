@@ -2,12 +2,7 @@ const jwt = require("jsonwebtoken");
 const { db, id } = require("../db");
 const { JWT_SECRET } = require("../middleware/auth");
 
-// In-memory presence: who is currently "in" each voice channel.
-// { [channelId]: Map<userId, { id, username, avatarColor }> }
 const voicePresence = new Map();
-
-// Global online presence, counted by number of open sockets per user
-// (a user can have the app open in more than one tab).
 const onlineSocketCounts = new Map();
 
 function broadcastPresence(io) {
@@ -33,13 +28,12 @@ function leaveAllVoiceChannels(io, socket) {
 }
 
 function registerSocketHandlers(io) {
-  // Authenticate every socket connection using the same JWT issued at login.
   io.use((socket, next) => {
     try {
       const token = socket.handshake.auth?.token;
       if (!token) return next(new Error("Authentication required"));
       const payload = jwt.verify(token, JWT_SECRET);
-      socket.data.user = payload; // { id, username, email }
+      socket.data.user = payload;
       next();
     } catch (err) {
       next(new Error("Invalid or expired token"));
@@ -53,7 +47,6 @@ function registerSocketHandlers(io) {
     broadcastPresence(io);
     socket.emit("presence_update", { onlineUserIds: Array.from(onlineSocketCounts.keys()) });
 
-    // --- Text channels -------------------------------------------------
     socket.on("join_channel", (channelId) => {
       socket.join(`channel:${channelId}`);
     });
@@ -64,9 +57,11 @@ function registerSocketHandlers(io) {
 
     socket.on("send_message", (payload, ack) => {
       try {
-        const { channelId, content } = payload || {};
-        if (!channelId || !content || !content.trim()) {
-          if (ack) ack({ error: "content is required" });
+        const { channelId, content, attachment } = payload || {};
+        const trimmedContent = (content || "").trim().slice(0, 4000);
+
+        if (!channelId || (!trimmedContent && !attachment)) {
+          if (ack) ack({ error: "content or an attachment is required" });
           return;
         }
 
@@ -84,14 +79,24 @@ function registerSocketHandlers(io) {
         }
 
         const messageId = id();
-        const trimmed = content.trim().slice(0, 4000);
         db.prepare(
-          `INSERT INTO messages (id, channel_id, user_id, content) VALUES (?, ?, ?, ?)`
-        ).run(messageId, channelId, user.id, trimmed);
+          `INSERT INTO messages (id, channel_id, user_id, content, attachment_url, attachment_name, attachment_type, attachment_size)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        ).run(
+          messageId,
+          channelId,
+          user.id,
+          trimmedContent,
+          attachment?.url || null,
+          attachment?.name || null,
+          attachment?.type || null,
+          attachment?.size || null
+        );
 
         const row = db
           .prepare(
-            `SELECT m.id, m.content, m.created_at, u.id AS user_id, u.username, u.avatar_color
+            `SELECT m.id, m.content, m.created_at, u.id AS user_id, u.username, u.avatar_color,
+                    m.attachment_url, m.attachment_name, m.attachment_type, m.attachment_size
              FROM messages m JOIN users u ON u.id = m.user_id WHERE m.id = ?`
           )
           .get(messageId);
@@ -102,6 +107,14 @@ function registerSocketHandlers(io) {
           createdAt: row.created_at,
           channelId,
           author: { id: row.user_id, username: row.username, avatarColor: row.avatar_color },
+          attachment: row.attachment_url
+            ? {
+                url: row.attachment_url,
+                name: row.attachment_name,
+                type: row.attachment_type,
+                size: row.attachment_size,
+              }
+            : null,
         };
 
         io.to(`channel:${channelId}`).emit("new_message", message);
@@ -112,12 +125,10 @@ function registerSocketHandlers(io) {
       }
     });
 
-    // --- Voice channels (simulated presence, no real audio) ------------
     socket.on("voice_join", (channelId) => {
       const channel = db.prepare("SELECT * FROM channels WHERE id = ?").get(channelId);
       if (!channel || channel.type !== "voice") return;
 
-      // Leave any other voice channel first (can only be in one at a time).
       leaveAllVoiceChannels(io, socket);
 
       if (!voicePresence.has(channelId)) voicePresence.set(channelId, new Map());
@@ -132,7 +143,6 @@ function registerSocketHandlers(io) {
         channelId,
         members: voiceListFor(channelId),
       });
-      // Also let the joiner know immediately.
       socket.emit("voice_update", { channelId, members: voiceListFor(channelId) });
     });
 
